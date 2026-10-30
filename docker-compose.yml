@@ -1,0 +1,40 @@
+services:
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: discord-vc-music-bot:local
+    container_name: discord-vc-music-bot
+    env_file:
+      - .env
+    environment:
+      # ホストの .env に書かれた値より優先される
+      TEMP_DIR: /data/tmp
+      TMPDIR: /data/tmp
+      TZ: Asia/Tokyo
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 20s
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    volumes:
+      - bot-tmp:/data/tmp
+      # YouTube の bot 判定対策で cookie を使う場合のみ有効化する
+      # - ./cookies.txt:/app/cookies.txt:ro
+    mem_limit: 768m
+    cpus: 1.0
+    cpu_shares: 512
+    pids_limit: 256
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  bot-tmp:
