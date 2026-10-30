@@ -117,7 +117,7 @@ LaunchAgent が **15 秒ごとに `Discord` プロセスを確認**するだけ�
 QUIT_DOCKER_DESKTOP=0 INTERVAL=30 ./scripts/install-watch.sh   # 設定を変えて再インストール
 ```
 
-- ログ: `~/Library/Logs/discord-vc-music-bot/watch.log`
+- ログ: `~/Library/Logs/discord-vc-music-bot/watch.log`（動作ログ）/ `compose.log`（docker compose の最新出力）
 - `.env` が無い／`DISCORD_TOKEN` が空のときは起動せず、稼働中のコンテナも停止します（再起動ループ防止）
 - Discord 起動直後は Docker Desktop の準備待ちで数十秒かかることがあります
 
@@ -214,6 +214,7 @@ src/
 | 音が出ない | `/volume` を確認。VC 内で Bot がミュート / サーバーミュートされていないか確認 |
 | ライブ配信が再生されない | 仕様です（ライブ配信は対象外） |
 | 曲が途中で切れる | `DEBUG=1` でログを確認。ディスク容量・ネットワークを確認 |
+| 起動時に `Cannot start Docker Compose application ... 500 Internal Server Error` | Docker Desktop の起動直後はエンジンが未準備のため一時的に発生します。スクリプトは最大 3 回リトライし、次回ポーリング（15 秒後）でも再試行するので通常は自動復帰します。繰り返す場合は Docker Desktop → Settings → General の **「Docker Desktop 起動時に Docker Compose アプリケーションを起動する」を OFF** にしてください（起動は LaunchAgent が担当するため不要） |
 
 ## セキュリティ
 

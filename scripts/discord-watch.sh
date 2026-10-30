@@ -49,8 +49,9 @@ is_discord_running() {
   pgrep -x "${DISCORD_PROCESS}" >/dev/null 2>&1
 }
 
+# docker info は起動途中でも成功することがあるため、実際に使う containers API まで確認する
 docker_ready() {
-  docker info >/dev/null 2>&1
+  docker info >/dev/null 2>&1 && docker ps -q >/dev/null 2>&1
 }
 
 # .env が無くても状態確認・停止ができるよう、compose ではなくコンテナ名で扱う
@@ -65,6 +66,29 @@ wait_for_docker() {
     sleep 2
     waited=$((waited + 2))
   done
+  return 1
+}
+
+# Docker Desktop 起動直後は API が 500 を返すことがあるため、数回リトライする
+start_container() {
+  local attempt=1
+  local max_attempts=3
+  local out="${LOG_DIR}/compose.log"
+
+  while [ "${attempt}" -le "${max_attempts}" ]; do
+    : >"${out}"
+    if ( cd "${REPO_DIR}" && docker compose up -d ) >>"${out}" 2>&1; then
+      return 0
+    fi
+
+    [ "${attempt}" -ge "${max_attempts}" ] && break
+
+    sleep 5
+    # デーモンがまだ不安定なら少し多めに待つ
+    docker_ready || sleep 5
+    attempt=$((attempt + 1))
+  done
+
   return 1
 }
 
@@ -87,10 +111,11 @@ start_bot() {
     log "Docker デーモンが停止中 → Docker Desktop を起動します"
     open -a Docker >/dev/null 2>&1 || true
     if ! wait_for_docker; then
-      log "ERROR Docker デーモンが起動しませんでした（${DOCKER_WAIT_SECONDS}秒待機）"
+      log_once "docker-unavailable" "ERROR Docker デーモンが起動しませんでした（${DOCKER_WAIT_SECONDS}秒待機）"
       return 1
     fi
-    log "Docker デーモンの準備ができました"
+    log "Docker デーモンの準備ができました（安定化待ち）"
+    sleep 5
   fi
 
   if bot_running; then
@@ -98,13 +123,15 @@ start_bot() {
     return 0
   fi
 
-  log "Discord の起動を検出 → Bot を起動します"
-  if ( cd "${REPO_DIR}" && docker compose up -d ) >>"${LOG_FILE}" 2>&1; then
+  # 失敗が続く間は同じ行を繰り返さない
+  if [ "$(last_state)" != "start-failed" ]; then
+    log "Discord の起動を検出 → Bot を起動します"
+  fi
+  if start_container; then
     log "Bot を起動しました"
     set_state "running"
   else
-    log "ERROR Bot の起動に失敗しました（docker compose のログを参照）"
-    set_state "start-failed"
+    log_once "start-failed" "ERROR Bot の起動に失敗しました（3 回リトライ）。Docker Desktop の再起動が必要かもしれません"
   fi
 }
 
