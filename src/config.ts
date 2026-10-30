@@ -25,6 +25,7 @@ export const config = {
   maxQueue: Math.max(1, readInt('MAX_QUEUE', 50)),
   maxAttachmentMb: Math.max(1, readInt('MAX_ATTACHMENT_MB', 200)),
   idleTimeoutMs: Math.max(0, readInt('IDLE_TIMEOUT_MS', 0)),
+  leaveWhenEmptyMs: readInt('LEAVE_WHEN_EMPTY_MS', 30_000),
   tempDir: readString('TEMP_DIR') ?? path.join(os.tmpdir(), 'discord-vc-music-bot'),
   debug: readString('DEBUG') === '1',
 };

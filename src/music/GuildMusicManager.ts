@@ -56,6 +56,9 @@ export class GuildMusicManager {
   private active = false;
   private advanceChain: Promise<void> = Promise.resolve();
   private idleTimer: NodeJS.Timeout | null = null;
+  private emptyTimer: NodeJS.Timeout | null = null;
+  /** 一度でも人間が在席したか。初回参加直後に即退出しないためのフラグ */
+  private sawHuman = false;
 
   constructor(
     private readonly guildId: string,
@@ -101,6 +104,39 @@ export class GuildMusicManager {
     this.watchedChannelId = channelId;
   }
 
+  /**
+   * 監視対象 VC の在席人数が変わったときに呼ぶ。
+   * 人間が全員いなくなったら猶予後に自動退出する（戻ってきたら取り消す）。
+   */
+  notifyChannelHumans(humanCount: number): void {
+    if (!this.connection) return;
+
+    if (humanCount > 0) {
+      this.sawHuman = true;
+      this.clearEmptyTimer();
+      return;
+    }
+
+    // 一度も人間が来ていない（/m 直後など）なら退出しない
+    if (!this.sawHuman) return;
+    // 負値で無効化
+    if (config.leaveWhenEmptyMs < 0) return;
+    if (this.emptyTimer) return;
+
+    if (config.leaveWhenEmptyMs === 0) {
+      log.info(`VC に誰もいなくなったため退出します (guild=${this.guildId})`);
+      this.leave();
+      return;
+    }
+
+    this.emptyTimer = setTimeout(() => {
+      this.emptyTimer = null;
+      log.info(`VC に誰もいなくなったため退出します (guild=${this.guildId})`);
+      this.leave();
+    }, config.leaveWhenEmptyMs);
+    this.emptyTimer.unref();
+  }
+
   async join(channel: VoiceBasedChannel): Promise<void> {
     const me = channel.guild.members.me;
     if (!me) throw new Error('Bot のメンバー情報を取得できませんでした');
@@ -136,11 +172,14 @@ export class GuildMusicManager {
     this.connection = connection;
     connection.subscribe(this.player);
     this.suppressIdleNotice = false;
+    this.sawHuman = channel.members.some((member) => !member.user.bot);
+    this.clearEmptyTimer();
     this.setWatchedChannel(channel.id);
     log.info(`VC に接続しました (guild=${this.guildId}, channel=${channel.name})`);
   }
 
   leave(): void {
+    this.clearEmptyTimer();
     this.teardownConnection();
     this.resetState();
     log.info(`VC から退出しました (guild=${this.guildId})`);
@@ -243,6 +282,7 @@ export class GuildMusicManager {
     const connection = this.connection;
     this.connection = null;
     this.active = false;
+    this.clearEmptyTimer();
     if (!connection) return;
     this.player.stop(true);
     connection.destroy();
@@ -258,6 +298,8 @@ export class GuildMusicManager {
     this.watchedChannelId = null;
     this.disposeCurrent();
     this.clearIdleTimer();
+    this.clearEmptyTimer();
+    this.sawHuman = false;
   }
 
   private advance(): void {
@@ -397,6 +439,12 @@ export class GuildMusicManager {
     if (!this.idleTimer) return;
     clearTimeout(this.idleTimer);
     this.idleTimer = null;
+  }
+
+  private clearEmptyTimer(): void {
+    if (!this.emptyTimer) return;
+    clearTimeout(this.emptyTimer);
+    this.emptyTimer = null;
   }
 
   private async notifyStarted(track: Track): Promise<void> {

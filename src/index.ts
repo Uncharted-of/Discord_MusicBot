@@ -1,4 +1,4 @@
-import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits, type VoiceBasedChannel } from 'discord.js';
 import { assertConfig, config } from './config.js';
 import { handleCommand, registerCommands } from './handlers/commands/index.js';
 import { registerVoiceChatWatcher } from './handlers/voiceChatWatcher.js';
@@ -18,6 +18,11 @@ const client = new Client({
 
 const music = new MusicService(client);
 
+function countHumans(channel: VoiceBasedChannel | null): number {
+  if (!channel) return 0;
+  return channel.members.filter((member) => !member.user.bot).size;
+}
+
 client.once(Events.ClientReady, (readyClient) => {
   void (async () => {
     logger.info(`ログインしました: ${readyClient.user.tag}`);
@@ -33,15 +38,27 @@ client.on(Events.InteractionCreate, (interaction) => {
   void handleCommand(interaction, music);
 });
 
-// Bot が別の VC へ移動された場合は監視対象を追従する
-client.on(Events.VoiceStateUpdate, (_oldState, newState) => {
-  if (newState.member?.id !== client.user?.id) return;
-
+client.on(Events.VoiceStateUpdate, (oldState, newState) => {
   const manager = music.forGuild(newState.guild);
   if (!manager.isConnected) return;
 
-  if (newState.channelId) manager.setWatchedChannel(newState.channelId);
-  else manager.destroy();
+  // Bot 自身が移動・切断された場合
+  if (newState.member?.id === client.user?.id) {
+    if (!newState.channelId) {
+      manager.destroy();
+      return;
+    }
+    manager.setWatchedChannel(newState.channelId);
+    manager.notifyChannelHumans(countHumans(newState.channel));
+    return;
+  }
+
+  // 監視対象 VC の人数変化（人間が全員いなくなったら退出する）
+  const watched = manager.watchedChannel;
+  if (!watched) return;
+  if (oldState.channelId !== watched && newState.channelId !== watched) return;
+
+  manager.notifyChannelHumans(countHumans(newState.channel ?? oldState.channel));
 });
 
 registerVoiceChatWatcher(client, music);
