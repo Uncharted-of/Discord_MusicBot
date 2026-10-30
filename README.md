@@ -76,7 +76,7 @@ docker compose down            # コンテナ削除
 - `restart: unless-stopped` により、Docker Desktop が動いている間は自動復帰します
 - リソースは `mem_limit: 768m` / `cpus: 1.0` / `cpu_shares: 512` に制限済み（Opus パススルーなので実使用は僅少）
 - 音源の一時ファイルは named volume `bot-tmp`（`/data/tmp`）に置き、起動時に自動掃除します
-- yt-dlp を更新したいときは `docker compose build --no-cache && docker compose up -d`
+- yt-dlp は `Dockerfile` の `YTDLP_VERSION` で固定し、公開チェックサム（SHA2-256SUMS）で検証しています。更新するときは `YTDLP_VERSION` を上げて `docker compose up -d --build`
 
 ### ローカルで直接実行（開発向け）
 
@@ -110,11 +110,11 @@ LaunchAgent が **15 秒ごとに `Discord` プロセスを確認**するだけ�
 | 変数 | 既定 | 説明 |
 | --- | --- | --- |
 | `INTERVAL` | `15` | 監視間隔（秒） |
-| `QUIT_DOCKER_DESKTOP` | `1` | Discord 終了時に Docker Desktop も終了する（他コンテナが動いていれば終了しない） |
+| `QUIT_DOCKER_DESKTOP` | `0` | Discord 終了時に Docker Desktop も終了する（opt-in。他コンテナが動いていれば終了しない） |
 | `DISCORD_PROCESS` | `Discord` | 監視するプロセス名（Canary は `Discord Canary` など） |
 
 ```bash
-QUIT_DOCKER_DESKTOP=0 INTERVAL=30 ./scripts/install-watch.sh   # 設定を変えて再インストール
+QUIT_DOCKER_DESKTOP=1 INTERVAL=30 ./scripts/install-watch.sh   # Docker も落とす場合は 1
 ```
 
 - ログ: `~/Library/Logs/discord-vc-music-bot/watch.log`（動作ログ）/ `compose.log`（docker compose の最新出力）
@@ -150,7 +150,8 @@ QUIT_DOCKER_DESKTOP=0 INTERVAL=30 ./scripts/install-watch.sh   # 設定を変え
 | `/volume <0-200>` | 音量変更（即時反映） |
 
 `/skip` `/pause` `/resume` `/stop` `/volume` は **接続中の VC にいる人・DJ ロール・管理者** のみ実行できます（`/queue` `/nowplaying` は誰でも参照可）。
-`/join` `/leave` は `DJ_ROLE_ID` を設定した場合のみ DJ ロールが必要になります。
+`/join` で**別の VC に Bot を移す**操作と `/leave` も同じ条件です（他人のセッションを奪えないようにするため）。
+Bot が未接続のときの `/join` は誰でも実行できます（`DJ_ROLE_ID` を設定すると DJ ロール必須になります）。
 
 ## 環境変数
 
@@ -233,3 +234,7 @@ src/
 - YouTube からの音源取得は各サービスの利用規約に関わります。私的利用の範囲でご利用ください。
 - Bot は単一サーバーでの利用を想定しています（内部的にはギルド単位で管理しているため、複数サーバーでも動作します）。
 - 一時ファイルは再生後に削除され、起動時にも前回の残骸を掃除します。
+
+## ライセンス
+
+[MIT](LICENSE)

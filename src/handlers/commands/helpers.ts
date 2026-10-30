@@ -44,7 +44,11 @@ export function assertCanControl(
   }
 }
 
-/** VC の開始・終了（/join, /leave）。DJ_ROLE_ID を設定した場合のみ DJ ロールを要求する */
+/**
+ * セッションの新規開始（未接続時の /join・/play）。
+ * DJ_ROLE_ID を設定した場合のみ DJ ロールを要求する。
+ * 接続中の移動や /leave は assertCanControl で別途制限する。
+ */
 export function canStartSession(member: GuildMember): boolean {
   if (member.permissions.has(PermissionFlagsBits.Administrator)) return true;
   if (!config.djRoleId) return true;

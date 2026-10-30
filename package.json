@@ -2,6 +2,8 @@
   "name": "discord-vc-music-bot",
   "version": "1.0.0",
   "private": true,
+  "license": "MIT",
+  "author": "Uncharted-of",
   "type": "module",
   "description": "Discord VC music bot: plays mp3 attachments and YouTube links posted in the voice channel's text chat.",
   "engines": {

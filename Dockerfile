@@ -25,10 +25,21 @@ RUN apt-get update \
 
 # yt-dlp は zipapp 形式（python3 上で動作）。
 # PyInstaller 形式の standalone バイナリは read-only + noexec tmpfs で展開に失敗するため使わない。
-RUN curl -fsSL --retry 3 -o /usr/local/bin/yt-dlp \
-      "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" \
- && chmod 755 /usr/local/bin/yt-dlp \
- && yt-dlp --version
+# 供給元の完全性を担保するため、バージョンを固定し公開チェックサムで検証する。
+# 更新する場合は YTDLP_VERSION を上げる（https://github.com/yt-dlp/yt-dlp/releases）
+ARG YTDLP_VERSION=2026.10.26
+RUN set -eux; \
+    base="https://github.com/yt-dlp/yt-dlp/releases/download/${YTDLP_VERSION}"; \
+    mkdir -p /tmp/ytdlp; \
+    curl -fsSL --retry 3 -o /tmp/ytdlp/yt-dlp "${base}/yt-dlp"; \
+    curl -fsSL --retry 3 -o /tmp/ytdlp/SHA2-256SUMS "${base}/SHA2-256SUMS"; \
+    cd /tmp/ytdlp; \
+    grep -E '  yt-dlp$' SHA2-256SUMS | sha256sum -c -; \
+    chmod 755 yt-dlp; \
+    mv yt-dlp /usr/local/bin/yt-dlp; \
+    cd /; \
+    rm -rf /tmp/ytdlp; \
+    yt-dlp --version
 
 WORKDIR /app
 COPY package.json package-lock.json ./

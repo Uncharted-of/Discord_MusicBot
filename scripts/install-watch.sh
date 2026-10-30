@@ -10,7 +10,7 @@ LABEL="local.discord-vc-music-bot.watch"
 PLIST="${HOME}/Library/LaunchAgents/${LABEL}.plist"
 LOG_DIR="${HOME}/Library/Logs/discord-vc-music-bot"
 INTERVAL="${INTERVAL:-15}"
-QUIT_DOCKER_DESKTOP="${QUIT_DOCKER_DESKTOP:-1}"
+QUIT_DOCKER_DESKTOP="${QUIT_DOCKER_DESKTOP:-0}"
 DISCORD_PROCESS="${DISCORD_PROCESS:-Discord}"
 
 DOCKER_BIN="$(command -v docker || true)"

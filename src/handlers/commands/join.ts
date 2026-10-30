@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { sanitizeDisplayText } from '../../util/text.js';
-import { assertCanStartSession, requireVoiceChannel } from './helpers.js';
+import { assertCanControl, assertCanStartSession, requireVoiceChannel } from './helpers.js';
 import type { Command } from './types.js';
 
 export const joinCommand: Command = {
@@ -8,12 +8,17 @@ export const joinCommand: Command = {
     .setName('join')
     .setDescription('VC に参加して、そのチャットの監視を開始します'),
   async execute({ interaction, music }) {
-    assertCanStartSession(interaction);
-
     const channel = requireVoiceChannel(interaction);
     await interaction.deferReply();
 
     const manager = music.forGuild(interaction.guild);
+    if (manager.isConnected) {
+      // 接続中に別の VC へ移すのは「現在のセッションの乗っ取り」になるため制限する
+      assertCanControl(interaction, manager);
+    } else {
+      assertCanStartSession(interaction);
+    }
+
     await manager.join(channel);
 
     const name = sanitizeDisplayText(channel.name, 100);
