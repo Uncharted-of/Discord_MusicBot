@@ -2,7 +2,7 @@ import { MessageFlags, type ChatInputCommandInteraction, type Client, type Inter
 import { config } from '../../config.js';
 import { createLogger } from '../../logger.js';
 import type { MusicService } from '../../music/MusicService.js';
-import { joinCommand } from './join.js';
+import { mCommand } from './m.js';
 import { leaveCommand } from './leave.js';
 import { nowPlayingCommand } from './nowplaying.js';
 import { pauseCommand } from './pause.js';
@@ -17,7 +17,7 @@ import { volumeCommand } from './volume.js';
 const log = createLogger('command');
 
 const commands: Command[] = [
-  joinCommand,
+  mCommand,
   leaveCommand,
   playCommand,
   skipCommand,

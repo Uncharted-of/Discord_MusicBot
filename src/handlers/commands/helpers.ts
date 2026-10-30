@@ -20,7 +20,7 @@ export function requireManager(
 ): GuildMusicManager {
   const manager = music.forGuild(interaction.guild);
   if (!manager.isConnected) {
-    throw new UserError('VC に接続していません。先に /join を実行してください');
+    throw new UserError('VC に接続していません。先に /m を実行してください');
   }
   return manager;
 }
@@ -45,7 +45,7 @@ export function assertCanControl(
 }
 
 /**
- * セッションの新規開始（未接続時の /join・/play）。
+ * セッションの新規開始（未接続時の /m・/play）。
  * DJ_ROLE_ID を設定した場合のみ DJ ロールを要求する。
  * 接続中の移動や /leave は assertCanControl で別途制限する。
  */

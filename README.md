@@ -124,7 +124,7 @@ QUIT_DOCKER_DESKTOP=1 INTERVAL=30 ./scripts/install-watch.sh   # Docker も落�
 ## 使い方
 
 1. 自分が VC に入る
-2. `/join` を実行（Bot が同じ VC に参加し、その VC のチャット監視を開始）
+2. `/m` を実行（Bot が同じ VC に参加し、その VC のチャット監視を開始）
 3. **VC のテキストチャット**に次のどちらかを投稿
    - mp3 / m4a / wav / ogg / opus / flac / webm / mp4 の添付ファイル
    - YouTube の URL（`youtube.com/watch?v=...`, `youtu.be/...`, `youtube.com/shorts/...`, `music.youtube.com/...`）
@@ -139,7 +139,7 @@ QUIT_DOCKER_DESKTOP=1 INTERVAL=30 ./scripts/install-watch.sh   # Docker も落�
 
 | コマンド | 説明 |
 | --- | --- |
-| `/join` | 実行者の VC に参加し、そのチャットの監視を開始 |
+| `/m` | 実行者の VC に参加し、そのチャットの監視を開始 |
 | `/leave` | 停止して VC から退出（監視も終了） |
 | `/play [query] [file]` | URL・検索語・添付ファイルでキューに追加（未接続なら自動参加） |
 | `/skip` | 再生中の曲をスキップ |
@@ -150,8 +150,8 @@ QUIT_DOCKER_DESKTOP=1 INTERVAL=30 ./scripts/install-watch.sh   # Docker も落�
 | `/volume <0-200>` | 音量変更（即時反映） |
 
 `/skip` `/pause` `/resume` `/stop` `/volume` は **接続中の VC にいる人・DJ ロール・管理者** のみ実行できます（`/queue` `/nowplaying` は誰でも参照可）。
-`/join` で**別の VC に Bot を移す**操作と `/leave` も同じ条件です（他人のセッションを奪えないようにするため）。
-Bot が未接続のときの `/join` は誰でも実行できます（`DJ_ROLE_ID` を設定すると DJ ロール必須になります）。
+`/m` で**別の VC に Bot を移す**操作と `/leave` も同じ条件です（他人のセッションを奪えないようにするため）。
+Bot が未接続のときの `/m` は誰でも実行できます（`DJ_ROLE_ID` を設定すると DJ ロール必須になります）。
 
 ## 環境変数
 
@@ -209,7 +209,7 @@ src/
 
 | 症状 | 対処 |
 | --- | --- |
-| チャットに貼っても反応しない | `MESSAGE CONTENT INTENT` が ON か確認。Bot が `/join` で入っている VC のチャットか確認（監視対象は接続中の VC のみ） |
+| チャットに貼っても反応しない | `MESSAGE CONTENT INTENT` が ON か確認。Bot が `/m` で入っている VC のチャットか確認（監視対象は接続中の VC のみ） |
 | `⚠ YouTube の情報を取得できませんでした: ... Sign in to confirm you're not a bot` | `YTDLP_COOKIES_FILE` にブラウザの cookie を書き出したファイルを指定。`yt-dlp` を最新化 |
 | `VC に接続できませんでした` | Bot に `Connect` / `Speak` 権限があるか、VC のユーザー上限に達していないか確認 |
 | 音が出ない | `/volume` を確認。VC 内で Bot がミュート / サーバーミュートされていないか確認 |

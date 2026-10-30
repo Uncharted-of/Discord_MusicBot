@@ -3,9 +3,9 @@ import { sanitizeDisplayText } from '../../util/text.js';
 import { assertCanControl, assertCanStartSession, requireVoiceChannel } from './helpers.js';
 import type { Command } from './types.js';
 
-export const joinCommand: Command = {
+export const mCommand: Command = {
   data: new SlashCommandBuilder()
-    .setName('join')
+    .setName('m')
     .setDescription('VC に参加して、そのチャットの監視を開始します'),
   async execute({ interaction, music }) {
     const channel = requireVoiceChannel(interaction);
